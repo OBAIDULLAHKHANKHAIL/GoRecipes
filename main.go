@@ -37,7 +37,10 @@ type Recipe struct {
 var recipes []Recipe
 
 func init() {
+	fmt.Println("hi im printing init 1")
 	recipes = make([]Recipe, 0)
+	fmt.Println("hi im printing init 2")
+
 }
 
 func NewRecipeHandler(c *gin.Context) {
