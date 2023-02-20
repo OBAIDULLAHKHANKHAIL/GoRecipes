@@ -2,7 +2,8 @@ package main
 
 import (
 	// "encoding/xml"
-	"fmt"
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -37,14 +38,12 @@ type Recipe struct {
 var recipes []Recipe
 
 func init() {
-	fmt.Println("hi im printing init 1")
 	recipes = make([]Recipe, 0)
-	fmt.Println("hi im printing init 2")
-
+	file, _ := ioutil.ReadFile("recipes.json")
+	_ = json.Unmarshal([]byte(file), &recipes)
 }
 
 func NewRecipeHandler(c *gin.Context) {
-	fmt.Println("hi im printing")
 	var recipe Recipe
 	if err := c.ShouldBindJSON(&recipe); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -56,16 +55,45 @@ func NewRecipeHandler(c *gin.Context) {
 	recipe.PublishedAt = time.Now()
 	recipes = append(recipes, recipe)
 	c.JSON(http.StatusOK, recipe)
+}
 
+func ListRecipesHAndler(c *gin.Context) {
+	c.JSON(http.StatusOK, recipes)
+}
+
+func UpdateRecipeHandler(c *gin.Context) {
+	id := c.Param("id")
+	var recipe Recipe
+	if err := c.ShouldBindJSON(&recipe); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error()})
+		return
+	}
+
+	index := -1
+	for i := 0; i < len(recipes); i++ {
+		if recipes[i].ID == id {
+			recipe.ID = id
+			index = i
+		}
+	}
+
+	if index == -1 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Recipe not found"})
+		return
+	}
+
+	recipes[index] = recipe
+
+	c.JSON(http.StatusOK, recipe)
 }
 
 // main function
 func main() {
-	fmt.Println("before gin fun calll")
 	router := gin.Default()
-	fmt.Println("before fun calll")
 	router.POST("/recipes", NewRecipeHandler)
-	fmt.Println("after fun calll")
-
+	router.GET("/recipes", ListRecipesHAndler)
+	router.PUT("/recipes/:id", UpdateRecipeHandler)
 	router.Run()
 }
